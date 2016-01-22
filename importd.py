@@ -16,7 +16,7 @@ def importfile(filename):
 	- Xdata (matrix of predictors)
 	- Ydata (array of outcomes)
 	"""
-	with open('./data/'+filename,'r') as datafile:
+	with open('../data/'+filename,'r') as datafile:
 		for i,line in enumerate(datafile):
 			if i == 0:
 				l = line.strip().split('\t')
@@ -41,7 +41,7 @@ def import_cnames(filename):
 	# attention: the number 756 here is correspondent to this experiment!
 	cnlst = []
 	cidlst = []
-	with open('./data/'+filename,'r') as datafile:
+	with open('../data/'+filename,'r') as datafile:
 		for i,line in enumerate(datafile):
 			l = line.strip().split('\t')
 			cnlst.append(l[1].strip().split('; '))
