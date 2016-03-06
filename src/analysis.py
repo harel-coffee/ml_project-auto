@@ -1,4 +1,4 @@
-#!/home/andrea/anaconda2/bin/python
+#! /usr/bin/env python
 import sys
 from sklearn import *
 import numpy as np
