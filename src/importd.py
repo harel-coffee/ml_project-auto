@@ -1,11 +1,9 @@
 
 #! /usr/bin/env python
 import sys
-from sklearn import *
 import numpy as np
 import cmath as math
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
+from functools import reduce
 
 
 # import data
@@ -17,7 +15,7 @@ def importfile(filename):
 	- Xdata (matrix of predictors)
 	- Ydata (array of outcomes)
 	"""
-	with open('../data/'+filename,'r') as datafile:
+	with open('./data/'+filename,'r') as datafile:
 		for i,line in enumerate(datafile):
 			if i == 0:
 				l = line.strip().split('\t')
@@ -29,7 +27,7 @@ def importfile(filename):
 					if j not in (0,1):
 						Xdata[j-2].append(v)
 	Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(nlst)]
-	print 'Import:\tcomplete'
+	print('Import:\tcomplete')
 	return nlst, Xdata, Ydata
 
 
@@ -43,7 +41,7 @@ def import_cnames(filename):
 	# attention: the number 756 here is correspondent to this experiment!
 	cnlst = []
 	cidlst = []
-	with open('../data/'+filename,'r') as datafile:
+	with open('./data/'+filename,'r') as datafile:
 		for i,line in enumerate(datafile):
 			l = line.strip().split('\t')
 			cnlst.append(l[2].strip().split('; ')[0])
@@ -63,7 +61,7 @@ def casesn(n):
 	elif 'week_10' in n:
 		return 3
 	else:
-		print 'error:'+str(n)
+		print('error:'+str(n))
 		return None
 
 def filterd(nlst, Xdata, Ydata, wids=['week_4','week_5','week_6','week_10']):

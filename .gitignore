@@ -4,5 +4,6 @@
 *~
 *.png
 .swp
+.pydevproject
 .project
 

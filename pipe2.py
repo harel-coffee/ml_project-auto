@@ -10,7 +10,7 @@ import numpy as np
 import logging
 import src.importd
 import cv_sampling as cv
-import matplotlib.pyplot as plt
+from sklearn import *
 import sklearn as sk
 from sklearn.pipeline import Pipeline
 from sklearn.grid_search import GridSearchCV
@@ -63,6 +63,7 @@ class Pipe(object):
         In case the input string is not in the list of accepted inputs the method
         returns an error message and None
         """
+        
         if estimatorname == 'PCA':
             return (estimatorname, sk.decomposition.PCA())
         elif estimatorname == 'FFS':
@@ -169,7 +170,7 @@ class Pipe(object):
 
                 pipetofit = Pipeline(steps=steplst)
 
-                print score_triple[0]
+                print(score_triple[0])
                 estimator = pipetofit.set_params(**score_triple[0]).fit(self.X,self.Y)
                 ranks.append((score_triple[1],score_triple[0],pipe.return_rank(estimator)))
 
@@ -220,6 +221,7 @@ if __name__ == '__main__':
 
     # test initialization of grid parameters
     griddic = dict(FFS__k=[80,90,100,110], FDA__solver=['svd','eigen'])
+    """
     pipe.crossgrid(griddic,cv=cv.leave_x_out(pipe.Y,1,100))
 
     print(pipe.return_score())
@@ -227,3 +229,4 @@ if __name__ == '__main__':
     print(pipe._pipe.named_steps.keys())
     pipe.return_rank()
     pipe.return_ranks(.9,printtofile=True)
+    """
