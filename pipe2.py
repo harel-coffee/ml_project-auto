@@ -147,7 +147,7 @@ class Pipe(object):
             if stepname == 'FDA':
                 clst = list(clst[0])
             # add the scores to the biolst dictionary if they are not 0
-            print clst
+            print(clst)
             counter = 0
             for i,c in enumerate(biolst):
                 if c != 0:
@@ -188,7 +188,7 @@ class Pipe(object):
         The saved rank list is sorted according to the score
         """
         now = datetime.now()
-        with open('./results/ranks/'+'+'.join(self._pipelst)+'_'+now.strftime('%Y.%m.%d_%H:%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
+        with open('./results/ranks/'+'_'.join(self._pipelst)+'_'+now.strftime('%Y_%m_%d_%H_%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
             f.write('# weeks: \t'+','.join(self.weeks)+'\n# pipeline:\t'+'+'.join(self._pipelst)+'\n cv:\tleave-'+str(len(list(self.cv[0][1])))+'-out \t samples: \t'+str(len(list(self.cv)))+'\n\n')
             for l in sorted(ranks,key= lambda x: x[0],reverse=True):
                 f.write('score:\t'+str(l[0])+'\nparameters:\t'+str(l[1])+'\n'+'\n'.join([a+'\t'+b for (a,b) in sorted(zip(map(str,l[2]),self.feat_names),key = lambda x: x[0],reverse=True)])+'\n\n------------------------------------------------\n')
