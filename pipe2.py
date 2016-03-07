@@ -63,7 +63,7 @@ class Pipe(object):
         In case the input string is not in the list of accepted inputs the method
         returns an error message and None
         """
-        
+
         if estimatorname == 'PCA':
             return (estimatorname, sk.decomposition.PCA())
         elif estimatorname == 'FFS':
@@ -80,7 +80,7 @@ class Pipe(object):
             print('Error: estimator not in the list!\n')
             return None
 
-    def crossgrid(self, griddic, cv = None):
+    def crossgrid(self, griddic, cv=None):
         """
         perform a crossvalidation procedure for mparameters in grid and cv-sample cv
 
@@ -103,7 +103,7 @@ class Pipe(object):
 
         # initialize the _gridsearch attribute
         # need to include how to create the dictionary from the input
-        self._gridsearch = sk.grid_search.GridSearchCV(self._pipe, griddic)
+        self._gridsearch = sk.grid_search.GridSearchCV(self._pipe, griddic, n_jobs=-1)
 
         # fit the CV grid
         self._gridsearch.fit(self.X,self.Y)
@@ -144,15 +144,17 @@ class Pipe(object):
 
         for stepname in self._pipelst:
             clst = Pipe.coeffs(estimator.named_steps[stepname])
-
+            if stepname == 'FDA':
+                clst = list(clst[0])
             # add the scores to the biolst dictionary if they are not 0
+            print clst
             counter = 0
             for i,c in enumerate(biolst):
                 if c != 0:
                     biolst[i] = clst[counter]
                     counter += 1
 
-        print(self._biolst)
+
         return biolst
 
     def return_ranks(self,tol,printtofile=False):
@@ -192,7 +194,6 @@ class Pipe(object):
                 f.write('score:\t'+str(l[0])+'\nparameters:\t'+str(l[1])+'\n'+'\n'.join([a+'\t'+b for (a,b) in sorted(zip(map(str,l[2]),self.feat_names),key = lambda x: x[0],reverse=True)])+'\n\n------------------------------------------------\n')
 
 
-
 def corr_analysis(Xdata,Ydata):
 	"""
 	Pearson correlation analysis fo the features in xdata and ydata
@@ -219,14 +220,14 @@ if __name__ == '__main__':
     # cvcounter test
     print('Pipe.cvcounter =\t'+str(pipe.cvcounter))
 
+    print(np.shape(np.array(X)))
     # test initialization of grid parameters
-    griddic = dict(FFS__k=[80,90,100,110], FDA__solver=['svd','eigen'])
-    """
-    pipe.crossgrid(griddic,cv=cv.leave_x_out(pipe.Y,1,100))
+
+    griddic = dict(FFS__k=[70,100],FDA__solver=['svd'],FDA__tol=[1e-5])
+    pipe.crossgrid(griddic,cv=cv.leave_x_out(pipe.Y,20,nsamples=200))
 
     print(pipe.return_score())
     print(pipe._gridsearch.grid_scores_)
     print(pipe._pipe.named_steps.keys())
     pipe.return_rank()
     pipe.return_ranks(.9,printtofile=True)
-    """

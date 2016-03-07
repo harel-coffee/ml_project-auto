@@ -13,13 +13,14 @@ def leave_x_out(nlst,x,nsamples=300):
 	""" Returns a random sample of size "samplesize" of a leave-x-out crossvalidation sampling"""
 
 	# enumerate the predictors
-	preds = range(len(nlst))
+	nn = len(nlst)
+	preds = np.arange(nn)
 	outlst = []
 
 	# sample nsamples times a new cv sample of size 112-x
 	while len(outlst) < nsamples:
-		bsample = np.random.choice(preds,size=len(nlst)-x,replace=False)
-		outlst.append((np.array([x for x in bsample]),np.array([x for x in range(len(nlst)) if x not in bsample])))
+		bsample = np.random.choice(nn,size=nn-x,replace=False)
+		outlst.append((np.array([y for y in bsample]),np.array([y for y in preds if y not in bsample])))
 
 	return outlst
 
@@ -51,6 +52,8 @@ def looo(nlst):
 
 	return outlst
 
+if __name__ == '__main__':
+	print(leave_x_out(np.arange(112),20,nsamples=30))
 
 
 """
