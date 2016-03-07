@@ -65,17 +65,17 @@ class Pipe(object):
         """
 
         if estimatorname == 'PCA':
-            return (estimatorname, sk.decomposition.PCA())
+            return (estimatorname, sk.decomposition.PCA())  # @UndefinedVariable
         elif estimatorname == 'FFS':
-            return (estimatorname, sk.feature_selection.SelectKBest(score_func=corr_analysis))
+            return (estimatorname, sk.feature_selection.SelectKBest(score_func=corr_analysis))  # @UndefinedVariable
         elif estimatorname == 'L1-LogReg':
-            return (estimatorname, sk.linear_model.LogisticRegression(penalty='l1'))
+            return (estimatorname, sk.linear_model.LogisticRegression(penalty='l1'))  # @UndefinedVariable
         elif estimatorname == 'L2-LogReg':
-            return (estimatorname, sk.linear_model.LogisticRegression())
+            return (estimatorname, sk.linear_model.LogisticRegression())  # @UndefinedVariable
         elif estimatorname == 'FDA':
-            return (estimatorname, sk.discriminant_analysis.LinearDiscriminantAnalysis())
+            return (estimatorname, sk.discriminant_analysis.LinearDiscriminantAnalysis())  # @UndefinedVariable
         elif estimatorname == 'RF':
-            return (estimatorname, sk.ensemble.RandomForestClassifier())
+            return (estimatorname, sk.ensemble.RandomForestClassifier())  # @UndefinedVariable
         else:
             print('Error: estimator not in the list!\n')
             return None
@@ -98,12 +98,12 @@ class Pipe(object):
             self.cv = cv
         elif cv == None and self.cv == None:
             # if no cv procedure has been specified set the classical l20o
-            print('ATTENTION:\tNo CV procedure specified, proceed with reduced l20o.')
+            print('ATTENTION:\tNo CV procedure specified, proceeding with reduced l20o.')
             cv = cv.leave_x_out(self.Y,20)
 
         # initialize the _gridsearch attribute
         # need to include how to create the dictionary from the input
-        self._gridsearch = sk.grid_search.GridSearchCV(self._pipe, griddic, n_jobs=-1)
+        self._gridsearch = sk.grid_search.GridSearchCV(self._pipe, griddic, n_jobs=-1) # @UndefinedVariable
 
         # fit the CV grid
         self._gridsearch.fit(self.X,self.Y)
@@ -195,10 +195,10 @@ class Pipe(object):
 
 
 def corr_analysis(Xdata,Ydata):
-	"""
+    """
 	Pearson correlation analysis fo the features in xdata and ydata
 	"""
-	return np.array([abs(np.corrcoef(np.array(Xdata)[:,j],Ydata)[0][1]) for j in range(len(Xdata[0]))]),np.array([1 for j in range(len(Xdata[0]))])
+    return np.array([abs(np.corrcoef(np.array(Xdata)[:,j],Ydata)[0][1]) for j in range(len(Xdata[0]))]),np.array([1 for j in range(len(Xdata[0]))])
 
 if __name__ == '__main__':
 

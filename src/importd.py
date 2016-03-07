@@ -52,6 +52,7 @@ def casesn(n):
 	"""
 	returns a number associated to each of the weeks in the range (1; 4)
 	"""
+	# TODO change to integer switch
 	if 'week_4' in n:
 		return 0
 	elif 'week_5' in n:
