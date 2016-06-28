@@ -8,7 +8,7 @@ Copyright of the program: Andrea Agazzi, UNIGE
 
 import numpy as np
 import logging
-import src.importd
+import src.jmport
 import cv_sampling as cv
 from sklearn import *
 import sklearn as sk
@@ -64,21 +64,23 @@ class Pipe(object):
         returns an error message and None
         """
 
-        if estimatorname == 'PCA':
-            return (estimatorname, sk.decomposition.PCA())  # @UndefinedVariable
-        elif estimatorname == 'FFS':
-            return (estimatorname, sk.feature_selection.SelectKBest(score_func=corr_analysis))  # @UndefinedVariable
-        elif estimatorname == 'L1-LogReg':
-            return (estimatorname, sk.linear_model.LogisticRegression(penalty='l1'))  # @UndefinedVariable
-        elif estimatorname == 'L2-LogReg':
-            return (estimatorname, sk.linear_model.LogisticRegression())  # @UndefinedVariable
-        elif estimatorname == 'FDA':
-            return (estimatorname, sk.discriminant_analysis.LinearDiscriminantAnalysis())  # @UndefinedVariable
-        elif estimatorname == 'RF':
-            return (estimatorname, sk.ensemble.RandomForestClassifier())  # @UndefinedVariable
-        else:
-            print('Error: estimator not in the list!\n')
-            return None
+        estimatorSwitcher = {
+            'PCA': sk.decomposition.PCA(copy=True),
+            'FFS': sk.feature_selection.SelectKBest(score_func=corr_analysis),
+            'L1LogReg': sk.linear_model.LogisticRegression(penalty='l1'),
+            'L2LogReg': sk.linear_model.LogisticRegression(),
+            'FDA': sk.discriminant_analysis.LinearDiscriminantAnalysis(n_components = 1,solver='svd'),
+            'RF': sk.ensemble.RandomForestClassifier(),
+            'GB': sk.ensemble.GradientBoostingClassifier()
+        }
+
+        try:
+            result = (estimatorname, estimatorSwitcher[estimatorname])
+        except KeyError:
+            print('Error: estimator '+estimatorname+' not in the list!\n')
+            result = None
+
+        return result
 
     def crossgrid(self, griddic, cv=None):
         """
@@ -154,7 +156,6 @@ class Pipe(object):
                     biolst[i] = clst[counter]
                     counter += 1
 
-
         return biolst
 
     def return_ranks(self,tol,printtofile=False):
@@ -181,14 +182,14 @@ class Pipe(object):
 
         return ranks
 
-    def save_ranks(self,ranks):
+    def save_ranks(self,ranks,filetype="liver"):
         """
         save the ranks list in a file
 
         The saved rank list is sorted according to the score
         """
         now = datetime.now()
-        with open('./results/ranks/'+'_'.join(self._pipelst)+'_'+now.strftime('%Y_%m_%d_%H_%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
+        with open('./results/ranks/'+'_'+filetype+'_'.join(self._pipelst)+'_'+now.strftime('%Y_%m_%d_%H_%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
             f.write('# weeks: \t'+','.join(self.weeks)+'\n# pipeline:\t'+'+'.join(self._pipelst)+'\n cv:\tleave-'+str(len(list(self.cv[0][1])))+'-out \t samples: \t'+str(len(list(self.cv)))+'\n\n')
             for l in sorted(ranks,key= lambda x: x[0],reverse=True):
                 f.write('score:\t'+str(l[0])+'\nparameters:\t'+str(l[1])+'\n'+'\n'.join([a+'\t'+b for (a,b) in sorted(zip(map(str,l[2]),self.feat_names),key = lambda x: x[0],reverse=True)])+'\n\n------------------------------------------------\n')
@@ -204,18 +205,19 @@ if __name__ == '__main__':
 
     # initialize X and Y for tests
 
-
+    organ = 'liver'
+    # this need to be changed depending on plasma/liver ---------------------------------------------------------------------------------------------------------------
     wids = ['week_4','week_5','week_6','week_10']
 
-    ns,Xdata,Ydata = src.importd.importfile('../data/file.dat')
-    _, X, Y, _ = src.importd.filterd(ns,Xdata,Ydata,wids)
-    _, names = src.importd.import_cnames('../data/file3.dat')
+    ns,Xdata,Ydata = src.jmport.importdata(organ)
+    _, X, Y, _ = src.jmport.filterd(ns,Xdata,Ydata,wids)
+    _, names = src.jmport.import_cnames(organ)
 
     # run automated tests
 
     #run an initialization test for a pipeline with pca and fda
     pipe = Pipe(X,Y,names,wids)
-    pipe.setpipe(['FFS','FDA'])
+    pipe.setpipe(['FFS','RF'])
 
     # cvcounter test
     print('Pipe.cvcounter =\t'+str(pipe.cvcounter))
@@ -223,7 +225,7 @@ if __name__ == '__main__':
     print(np.shape(np.array(X)))
     # test initialization of grid parameters
 
-    griddic = dict(FFS__k=[70,100],FDA__solver=['svd'],FDA__tol=[1e-5])
+    griddic = dict(FFS__k=[20,50,70,100],RF__n_estimators=[10,100,200,300],RF__criterion=["gini","entropy"],RF__max_features=["sqrt","log2"])
     pipe.crossgrid(griddic,cv=cv.leave_x_out(pipe.Y,20,nsamples=200))
 
     print(pipe.return_score())
