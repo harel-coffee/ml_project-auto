@@ -19,15 +19,14 @@ def importdata(organ,isTargeted=False):
 		extension = '_targeted.csv'
 	else:
 		extension = '.csv'
-	filename = ''.join(["../data/",organ,"_MS",extension])
+	filename = ''.join(["./data/",organ,"_MS",extension])
 	data = pd.read_csv(filename,index_col=0)
 	if not isTargeted:
 		data = data.transpose()
 	data = data.loc[:, (data != 0).any(axis=0)]
-	print data
-	nlst = data.index.values
-	print nlst
-	Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(nlst[2:])]
+	print(data)
+	nlst = data.index.values[2:]
+	Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(nlst)]
 	Xdata = data.as_matrix()[2:]
 	print('Import of "+filename+":\tcomplete')
 	return nlst, Xdata, Ydata
@@ -67,22 +66,20 @@ def import_results(filename):
 	return resultlst, ranklst, scorelst, paramlst
 
 
-def import_cnames(filename):
+def import_cnames(organ):
 	"""
 	import the names AND THE KEGG IDS of the chemical elements corresponding to different features of the predictors
 	returns
-	- cnlst: a list containing the names of the compounds that have the same mass as the compound ID corresponding to the entry of the array +1
-	- cidlst: a list containing the KEGG-IDs of the compounds that have the same mass as the compound ID corresponding to the entry of the array +1
+	- a list containing the names of the compounds that have the same mass as the compound ID corresponding to the entry of the array +1
+	- a list containing the KEGG-IDs of the compounds that have the same mass as the compound ID corresponding to the entry of the array +1
 	"""
 	# attention: the number 756 here is correspondent to this experiment!
-	cnlst = []
-	cidlst = []
-	with open(filename,'r') as datafile:
-		for i,line in enumerate(datafile):
-			l = line.strip().split('\t')
-			cnlst.append(l[2].strip().split('; ')[0])
-			cidlst.append(l[1].strip().split('; ')[0])
-	return cidlst, cnlst
+
+	filename = ''.join(["./data/",organ,"_names.csv"])
+
+	data = pd.read_csv(filename,index_col=0)
+
+	return data.iloc[:,4], data.iloc[:,3]
 
 def casesn(n):
 	"""
@@ -116,9 +113,11 @@ def filterd(nlst, Xdata, Ydata, wids=['week_4','week_5','week_6','week_10']):
 
 
 if __name__ == "__main__":
+	organ = 'liver'
 	print('Testing...\n\n')
 	print('Data Import for normal metabolomics\n-----------------------------------------------------------------------\n')
-	n, X, Y = importdata('liver')
+	n, X, Y = importdata(organ)
+
 	print('X:')
 	print(X)
 	print('-----------------------------------------------------------------------\nY:')
@@ -136,3 +135,10 @@ if __name__ == "__main__":
 	print(n)
 
 	print('\n--------------------------- Testing Completed Successfully!')
+
+	print('still to do: testing of import_cnames, filterd')
+
+	A, B = import_cnames(organ)
+
+	print(A)
+	print(B)
