@@ -19,23 +19,39 @@ def importdata(organ,isTargeted=False):
 		extension = '_targeted.csv'
 	else:
 		extension = '.csv'
-	filename = ''.join(["./data/",organ,"_MS",extension])
+	filename = ''.join(["../data/",organ,"_MS",extension])
 	data = pd.read_csv(filename,index_col=0)
 	if not isTargeted:
 		data = data.transpose()
 	#remove rows that are zero
 	data = data.loc[:, (data != 0).any(axis=0)]
 	print(data)
-	nlst = data.index.values[2:]
-	Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(nlst)]
-	Xdata = data.as_matrix()[2:]
+	if not isTargeted:
+		pnlst = [i.strip().split(' / ')[-1] for i in data.index.values.tolist()[1:]]
+		Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst)]
+		Xdata = data.as_matrix()[1:]
+		filename2 = ''.join(["../data/",organ,"_names.csv"])
+		data2 = pd.read_csv(filename2,index_col=0)
+		KEGGns = data2.iloc[:,5]
+		cnlst = [i.strip().split('; ')[0] for i in data2.iloc[:,4]]
+	else:
+		pnlst = data.iloc[:,0].tolist()
+		Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst)]
+		Xdata = data.as_matrix()[:,2:]
+		KEGGns = data.iloc[:,4]
+		cnlst = data.columns.values.tolist()[2:]
+		pdic = corrnames(organ)
+		pnlst = [pdic[i] for i in pnlst]
 	print('Import of "+filename+":\tcomplete')
-	return nlst, Xdata, Ydata
+	return pnlst, cnlst, Xdata, Ydata
 
-def totalimport(organ,isTargeted=True):
-	cns, Xdata, Ydata = importdata(organ,isTargeted)
-	_, pns = import_cnames(organ,isTargeted)
-	return cns, pns, Xdata, Ydata
+def corrnames(organ):
+	filename = ''.join(["../data/",organ,"_crossnames.csv"])
+	data = pd.read_csv(filename)
+	keys = data.iloc[:,2].tolist()
+	values = data.iloc[:,1].tolist()
+	return dict(zip(keys,values))
+
 
 # import data
 def import_results(filename):
@@ -72,7 +88,7 @@ def import_results(filename):
 	return resultlst, ranklst, scorelst, paramlst
 
 
-def import_cnames(organ,isTargeted):
+def import_cnames(organ,isTargeted=False):
 	"""
 	import the names AND THE KEGG IDS of the chemical elements corresponding to different features of the predictors
 	returns
@@ -81,19 +97,7 @@ def import_cnames(organ,isTargeted):
 	"""
 	# attention: the number 756 here is correspondent to this experiment!
 
-	if not isTargeted:
-		filename = ''.join(["./data/",organ,"_names.csv"])
-		data = pd.read_csv(filename,index_col=0)
-		KEGGns = data.iloc[:,4]
-		cns = data.iloc[:,3]
-	else:
-		filename = ''.join(["./data/",organ,"_MS_targeted.csv"])
-		data = pd.read_csv(filename,index_col=0)
-		data = data.loc[:, (data != 0).any(axis=0)]
-		KEGGns = data.iloc[:,4]
-		cns = data.iloc[:,3]
-
-	return KEGGns, cns
+	return 0
 
 def casesn(n):
 	"""
@@ -112,7 +116,7 @@ def casesn(n):
 		print('error:'+str(n))
 		return None
 
-def filterd(nlst, Xdata, Ydata, wids=['week_4','week_5','week_6','week_10']):
+def filterd(nlst, Xdata, Ydata, wids=['week_4','week_5','week_6','week_10','week4','week5','week6','week10']):
 	"""
 	Filter of the input data according to weeks.
 	input:
@@ -130,29 +134,42 @@ if __name__ == "__main__":
 	organ = 'liver'
 	print('Testing...\n\n')
 	print('Data Import for normal metabolomics\n-----------------------------------------------------------------------\n')
-	n, X, Y = importdata(organ)
+	pn, cn, X, Y = importdata(organ)
 
 	print('X:')
 	print(X)
 	print('-----------------------------------------------------------------------\nY:')
 	print(Y)
-	print('-----------------------------------------------------------------------\nnlst:')
-	print(n)
+	print('-----------------------------------------------------------------------\npn:')
+	print(pn)
+	print('-----------------------------------------------------------------------\ncn:')
+	print(cn)
+
+	print('\nlength comparison')
+	print(len(cn))
+	print(len(X[0]))
+	print(len(Y))
+	print(len(pn))
+	print(len(X))
 
 	print('\n\nData Import for targeted metabolomics\n-----------------------------------------------------------------------\n')
-	n, X, Y = importdata('liver',isTargeted=True)
+	pn, cn, X, Y = importdata('liver',isTargeted=True)
 	print('X:')
 	print(X)
 	print('-----------------------------------------------------------------------\nY:')
 	print(Y)
-	print('-----------------------------------------------------------------------\nnlst:')
-	print(n)
+	print('-----------------------------------------------------------------------\npn:')
+	print(pn)
+	print('-----------------------------------------------------------------------\ncn:')
+	print(cn)
 
-	print('\n--------------------------- Testing Completed Successfully!')
+	print('\nlength comparison:')
+	print(len(cn))
+	print(len(X[0]))
+	print(len(Y))
+	print(len(pn))
+	print(len(X))
 
-	print('still to do: testing of import_cnames, filterd')
+	corrnames(organ)
 
-	A, B = import_cnames(organ)
-
-	print(A)
-	print(B)
+	print('\n--------------------------- Import testing Completed Successfully!')
