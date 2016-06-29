@@ -8,7 +8,7 @@ Copyright of the program: Andrea Agazzi, UNIGE
 
 import numpy as np
 import logging
-import src.jmport
+import jmport
 import cv_sampling as cv
 from sklearn import *
 import sklearn as sk
@@ -209,9 +209,8 @@ if __name__ == '__main__':
     # this need to be changed depending on plasma/liver ---------------------------------------------------------------------------------------------------------------
     wids = ['week_4','week_5','week_6','week_10']
 
-    ns,Xdata,Ydata = src.jmport.importdata(organ)
-    _, X, Y, _ = src.jmport.filterd(ns,Xdata,Ydata,wids)
-    _, names = src.jmport.import_cnames(organ)
+    ns,names,Xdata,Ydata = jmport.importdata(organ)
+    _, X, Y, _ = jmport.filterd(ns,Xdata,Ydata,wids)
 
     # run automated tests
 

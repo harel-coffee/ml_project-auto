@@ -23,6 +23,7 @@ def importdata(organ,isTargeted=False):
 	data = pd.read_csv(filename,index_col=0)
 	if not isTargeted:
 		data = data.transpose()
+	#remove rows that are zero
 	data = data.loc[:, (data != 0).any(axis=0)]
 	print(data)
 	nlst = data.index.values[2:]
@@ -30,6 +31,11 @@ def importdata(organ,isTargeted=False):
 	Xdata = data.as_matrix()[2:]
 	print('Import of "+filename+":\tcomplete')
 	return nlst, Xdata, Ydata
+
+def totalimport(organ,isTargeted=True):
+	cns, Xdata, Ydata = importdata(organ,isTargeted)
+	_, pns = import_cnames(organ,isTargeted)
+	return cns, pns, Xdata, Ydata
 
 # import data
 def import_results(filename):
@@ -66,7 +72,7 @@ def import_results(filename):
 	return resultlst, ranklst, scorelst, paramlst
 
 
-def import_cnames(organ):
+def import_cnames(organ,isTargeted):
 	"""
 	import the names AND THE KEGG IDS of the chemical elements corresponding to different features of the predictors
 	returns
@@ -75,11 +81,19 @@ def import_cnames(organ):
 	"""
 	# attention: the number 756 here is correspondent to this experiment!
 
-	filename = ''.join(["./data/",organ,"_names.csv"])
+	if not isTargeted:
+		filename = ''.join(["./data/",organ,"_names.csv"])
+		data = pd.read_csv(filename,index_col=0)
+		KEGGns = data.iloc[:,4]
+		cns = data.iloc[:,3]
+	else:
+		filename = ''.join(["./data/",organ,"_MS_targeted.csv"])
+		data = pd.read_csv(filename,index_col=0)
+		data = data.loc[:, (data != 0).any(axis=0)]
+		KEGGns = data.iloc[:,4]
+		cns = data.iloc[:,3]
 
-	data = pd.read_csv(filename,index_col=0)
-
-	return data.iloc[:,4], data.iloc[:,3]
+	return KEGGns, cns
 
 def casesn(n):
 	"""
