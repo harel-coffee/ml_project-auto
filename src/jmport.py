@@ -15,37 +15,86 @@ def importdata(organ,isTargeted=False):
 	- Xdata (matrix of predictors)
 	- Ydata (array of outcomes)
 	"""
-	if isTargeted:
-		extension = '_targeted.csv'
-	else:
-		extension = '.csv'
-	filename = ''.join(["../data/",organ,"_MS",extension])
-	data = pd.read_csv(filename,index_col=0)
-	if not isTargeted:
-		data = data.transpose()
+	#!!!!!!! shitty code ahead
 	#remove rows that are zero
-	data = data.loc[:, (data != 0).any(axis=0)]
-	print(data)
-	if not isTargeted:
+	if isTargeted == False:
+		extension = '.csv'
+		filename = ''.join(["../data/",organ,"_MS",extension])
+		data = pd.read_csv(filename,index_col=0)
+		data = data.loc[:, (data != 0).any(axis=0)]
+		data = data.transpose()
 		pnlst = [i.strip().split(' / ')[-1] for i in data.index.values.tolist()[1:]]
 		Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst)]
 		Xdata = data.as_matrix()[1:]
-		filename2 = ''.join(["../data/",organ,"_names.csv"])
-		data2 = pd.read_csv(filename2,index_col=0)
-		KEGGns = data2.iloc[:,5]
-		cnlst = [i.strip().split('; ')[0] for i in data2.iloc[:,4]]
-	else:
+		filename3 = ''.join(["../data/",organ,"_names.csv"])
+		data3 = pd.read_csv(filename3,index_col=0)
+		KEGGns = data3.iloc[:,5]
+		cnlst = [i.strip().split('; ')[0] for i in data3.iloc[:,4]]
+	elif isTargeted == True:
+		extension = '_targeted.csv'
+		filename = ''.join(["../data/",organ,"_MS",extension])
+		data = pd.read_csv(filename,index_col=0)
+		data = data.loc[:, (data != 0).any(axis=0)]
 		pnlst = data.iloc[:,0].tolist()
 		Ydata = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst)]
 		Xdata = data.as_matrix()[:,2:]
 		KEGGns = data.iloc[:,4]
 		cnlst = data.columns.values.tolist()[2:]
+		#pdic = corrnames(organ)
+		#pnlst = [pdic[i] for i in pnlst]
+	else:
+		# None
+
+		extension = '.csv'
+		filename = ''.join(["../data/",organ,"_MS",extension])
+		data = pd.read_csv(filename,index_col=0)
+		data = data.loc[:, (data != 0).any(axis=0)]
+		data = data.transpose()
+
+		pnlst1 = [i.strip().split(' / ')[-1] for i in data.index.values.tolist()[1:]]
+		Ydata1 = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst1)]
+		Xdata1 = data.as_matrix()[1:]
+		filename3 = ''.join(["../data/",organ,"_names.csv"])
+		data3 = pd.read_csv(filename3,index_col=0)
+		KEGGns = data3.iloc[:,5]
+		cnlst = [i.strip().split('; ')[0] for i in data3.iloc[:,4]]
+
+
+		extension2 = '_targeted.csv'
+		filename2 = ''.join(["../data/",organ,"_MS",extension2])
+		data2 = pd.read_csv(filename2,index_col=0)
+		data2 = data2.loc[:, (data2 != 0).any(axis=0)]
+
+		pnlst2 = data2.iloc[:,0].tolist()
+		Ydata2 = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst2)]
+		Xdata2 = data2.as_matrix()[:,2:]
+		KEGGns2 = data2.iloc[:,4]
+		cnlst2 = data2.columns.values.tolist()[2:]
 		pdic = corrnames(organ)
-		pnlst = [pdic[i] for i in pnlst]
+		pnlst2 = [pdic[i] for i in pnlst2]
+
+		cnlst.extend(cnlst2)
+		X = []
+		Ydata = []
+		pnlst = []
+		for i,p in enumerate(pnlst1):
+			for j,q in enumerate(pnlst2):
+				if str(q) in p:
+					X.append(list(np.concatenate((Xdata1[i],Xdata2[j]),axis=0)))
+					Ydata.append(Ydata1[i])
+					pnlst.append(p)
+					if Ydata1[i] != Ydata2[j]:
+						print('FATAL ERROR: wrong identification of\t'+p+'\tand\t'+q)
+					break
+		Xdata = np.array(X)
+
 	print('Import of "+filename+":\tcomplete')
 	return pnlst, cnlst, Xdata, Ydata
 
 def corrnames(organ):
+	"""
+	returns a dictionary correlating the name of the mices in the TM (targeted metabolomics) experiment and the corresponding ID #
+	"""
 	filename = ''.join(["../data/",organ,"_crossnames.csv"])
 	data = pd.read_csv(filename)
 	keys = data.iloc[:,2].tolist()
@@ -104,13 +153,13 @@ def casesn(n):
 	returns a number associated to each of the weeks in the range (1; 4)
 	"""
 	# TODO change to integer switch
-	if 'week_4' in n or 'week4' in n:
+	if 'week_4' in n or 'week4' in n or '4w' in n:
 		return 0
-	elif 'week_5' in n or 'week5' in n:
+	elif 'week_5' in n or 'week5' in n or '5w' in n:
 		return 1
-	elif 'week_6' in n or 'week6' in n:
+	elif 'week_6' in n or 'week6' in n or '6w' in n:
 		return 2
-	elif 'week_10' in n or 'week10' in n:
+	elif 'week_10' in n or 'week10' in n or '10w' in n:
 		return 3
 	else:
 		print('error:'+str(n))
@@ -128,6 +177,9 @@ def filterd(nlst, Xdata, Ydata, wids=['week_4','week_5','week_6','week_10','week
 	y2 = [4*y+casesn(nlst[i]) for i,y in enumerate(Ydata)]
 	selectlst = [reduce(lambda x,y: x or y, [wid in n for wid in wids]) for n in nlst]
 	return [n for i,n in enumerate(nlst) if selectlst[i]], np.array([x for i,x in enumerate(Xdata) if selectlst[i]]), np.array([y for i,y in enumerate(Ydata) if selectlst[i]]), np.array([y for i,y in enumerate(y2) if selectlst[i]])
+
+def importcombdata(organ,untargeted=True,targeted=False):
+	return 0
 
 
 if __name__ == "__main__":
@@ -153,7 +205,7 @@ if __name__ == "__main__":
 	print(len(X))
 
 	print('\n\nData Import for targeted metabolomics\n-----------------------------------------------------------------------\n')
-	pn, cn, X, Y = importdata('liver',isTargeted=True)
+	pn, cn, X, Y = importdata('liver',isTargeted=None)
 	print('X:')
 	print(X)
 	print('-----------------------------------------------------------------------\nY:')

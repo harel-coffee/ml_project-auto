@@ -23,7 +23,7 @@ class Pipe(object):
     """
     cvcounter = 0
 
-    def __init__(self,Xdata,Ydata,feat_names,weeks,pipe=None,griddic=None,cv=None):
+    def __init__(self,Xdata,Ydata,feat_names,weeks,pipe=None,griddic=None,cv=None,organ='liver',isTargeted=False):
         self.X = Xdata
         self.Y = Ydata
         self.feat_names = feat_names
@@ -35,6 +35,8 @@ class Pipe(object):
         self._gridsearch = None
         self._biolst = [None for n in feat_names]
         self.cv = cv
+        self.organ = organ
+        self.isTargeted = isTargeted
 
     def newpipe(self):
         """ if pipe is empty return true else reset all """
@@ -182,14 +184,14 @@ class Pipe(object):
 
         return ranks
 
-    def save_ranks(self,ranks,filetype="liver"):
+    def save_ranks(self,ranks):
         """
         save the ranks list in a file
 
         The saved rank list is sorted according to the score
         """
         now = datetime.now()
-        with open('./results/ranks/'+'_'+filetype+'_'.join(self._pipelst)+'_'+now.strftime('%Y_%m_%d_%H_%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
+        with open('../results/ranks/'+self.organ+'_Targ='+str(self.isTargeted)+'_'+'_'.join(self._pipelst)+'_'+now.strftime('%Y_%m_%d_%H_%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
             f.write('# weeks: \t'+','.join(self.weeks)+'\n# pipeline:\t'+'+'.join(self._pipelst)+'\n cv:\tleave-'+str(len(list(self.cv[0][1])))+'-out \t samples: \t'+str(len(list(self.cv)))+'\n\n')
             for l in sorted(ranks,key= lambda x: x[0],reverse=True):
                 f.write('score:\t'+str(l[0])+'\nparameters:\t'+str(l[1])+'\n'+'\n'.join([a+'\t'+b for (a,b) in sorted(zip(map(str,l[2]),self.feat_names),key = lambda x: x[0],reverse=True)])+'\n\n------------------------------------------------\n')
@@ -206,17 +208,24 @@ if __name__ == '__main__':
     # initialize X and Y for tests
 
     organ = 'liver'
+    isTargeted = None
     # this need to be changed depending on plasma/liver ---------------------------------------------------------------------------------------------------------------
-    wids = ['week_4','week_5','week_6','week_10']
+    if organ == 'liver' and (isTargeted == False or isTargeted == None):
+        wids = ['week4','week5','week6','week10']
+    elif organ == 'plasma' and isTargeted == False:
+        wids = ['week4','week5','week6','week10']
+    elif organ == 'liver' and isTargeted == True:
+        wids = ['4w','5w','6w','10w']
+    cvweeks = wids[0:2]
 
-    ns,names,Xdata,Ydata = jmport.importdata(organ)
-    _, X, Y, _ = jmport.filterd(ns,Xdata,Ydata,wids)
+    pns,cns,Xdata,Ydata = jmport.importdata(organ,isTargeted=isTargeted)
+    _, X, Y, _ = jmport.filterd(pns,Xdata,Ydata,wids)
 
     # run automated tests
 
     #run an initialization test for a pipeline with pca and fda
-    pipe = Pipe(X,Y,names,wids)
-    pipe.setpipe(['FFS','RF'])
+    pipe = Pipe(X,Y,cns,wids,organ=organ,isTargeted=isTargeted)
+    pipe.setpipe(['FFS','GB'])
 
     # cvcounter test
     print('Pipe.cvcounter =\t'+str(pipe.cvcounter))
@@ -224,8 +233,10 @@ if __name__ == '__main__':
     print(np.shape(np.array(X)))
     # test initialization of grid parameters
 
-    griddic = dict(FFS__k=[20,50,70,100],RF__n_estimators=[10,100,200,300],RF__criterion=["gini","entropy"],RF__max_features=["sqrt","log2"])
-    pipe.crossgrid(griddic,cv=cv.leave_x_out(pipe.Y,20,nsamples=200))
+
+    #griddic = dict(FFS__k=[10,20,40,50,100,130,200,750,800],RF__n_estimators=[10,100,200,300],RF__criterion=["gini","entropy"],RF__max_features=["sqrt","log2"])
+    griddic = dict(FFS__k=[10,20,40,50,100,130,200,750,800],GB__n_estimators=[100,200,300,600],GB__learning_rate=[0.1,0.3,0.5],GB__max_features=["auto"],GB__max_depth=[3,5,10])
+    pipe.crossgrid(griddic,cv=cv.leave_x_out(pipe.Y,20,nsamples=200,testlst=[i for i,n in enumerate(pns) if any(j in n for j in cvweeks)]))
 
     print(pipe.return_score())
     print(pipe._gridsearch.grid_scores_)
