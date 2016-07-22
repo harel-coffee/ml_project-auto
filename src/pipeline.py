@@ -23,7 +23,7 @@ class Pipe(object):
     """
     cvcounter = 0
 
-    def __init__(self,Xdata,Ydata,feat_names,weeks,pipe=None,griddic=None,cv=None,organ='liver',isTargeted=False):
+    def __init__(self,Xdata,Ydata,feat_names,weeks,pipe=None,griddic=None,cv=None,organ='liver',isTargeted=False,LogConc=False):
         self.X = Xdata
         self.Y = Ydata
         self.feat_names = feat_names
@@ -37,6 +37,7 @@ class Pipe(object):
         self.cv = cv
         self.organ = organ
         self.isTargeted = isTargeted
+        self.LogConc = LogConc
 
     def newpipe(self):
         """ if pipe is empty return true else reset all """
@@ -191,7 +192,7 @@ class Pipe(object):
         The saved rank list is sorted according to the score
         """
         now = datetime.now()
-        with open('../results/ranks/'+self.organ+'_Targ='+str(self.isTargeted)+'_'+'_'.join(self._pipelst)+'_'+now.strftime('%Y_%m_%d_%H_%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
+        with open('../results/ranks/'+self.organ+'_Targ='+str(self.isTargeted)+'_Log='+str(self.LogConc)+'_'+'_'.join(self._pipelst)+'_'+now.strftime('%Y_%m_%d_%H_%M')+'_'+str(Pipe.cvcounter)+'.dat','w') as f:
             f.write('# weeks: \t'+','.join(self.weeks)+'\n# pipeline:\t'+'+'.join(self._pipelst)+'\n cv:\tleave-'+str(len(list(self.cv[0][1])))+'-out \t samples: \t'+str(len(list(self.cv)))+'\n\n')
             for l in sorted(ranks,key= lambda x: x[0],reverse=True):
                 f.write('score:\t'+str(l[0])+'\nparameters:\t'+str(l[1])+'\n'+'\n'.join([a+'\t'+b for (a,b) in sorted(zip(map(str,l[2]),self.feat_names),key = lambda x: x[0],reverse=True)])+'\n\n------------------------------------------------\n')
@@ -208,7 +209,8 @@ if __name__ == '__main__':
     # initialize X and Y for tests
 
     organ = 'liver'
-    isTargeted = None
+    isTargeted = False #if none use both
+    LogConc = True
     # this need to be changed depending on plasma/liver ---------------------------------------------------------------------------------------------------------------
     if organ == 'liver' and (isTargeted == False or isTargeted == None):
         wids = ['week4','week5','week6','week10']
@@ -218,13 +220,13 @@ if __name__ == '__main__':
         wids = ['4w','5w','6w','10w']
     cvweeks = wids[0:2]
 
-    pns,cns,Xdata,Ydata = jmport.importdata(organ,isTargeted=isTargeted)
+    pns,cns,Xdata,Ydata = jmport.importdata(organ,isTargeted=isTargeted,LogConc=LogConc)
     _, X, Y, _ = jmport.filterd(pns,Xdata,Ydata,wids)
 
     # run automated tests
 
     #run an initialization test for a pipeline with pca and fda
-    pipe = Pipe(X,Y,cns,wids,organ=organ,isTargeted=isTargeted)
+    pipe = Pipe(X,Y,cns,wids,organ=organ,isTargeted=isTargeted,LogConc=LogConc)
     pipe.setpipe(['FFS','GB'])
 
     # cvcounter test

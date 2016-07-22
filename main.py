@@ -3,4 +3,4 @@
 from src import pipeline
 
 if __name__ == '__main__':
-    src.pipeline.__main__()
+    src.pipeline()

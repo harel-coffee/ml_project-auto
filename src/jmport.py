@@ -7,7 +7,7 @@ from functools import reduce
 import pandas as pd
 
 # import data
-def importdata(organ,isTargeted=False):
+def importdata(organ,isTargeted=False,LogConc=None):
 	"""
 	import the training set from filename
 	returns
@@ -40,40 +40,16 @@ def importdata(organ,isTargeted=False):
 		Xdata = data.as_matrix()[:,2:]
 		KEGGns = data.iloc[:,4]
 		cnlst = data.columns.values.tolist()[2:]
-		#pdic = corrnames(organ)
-		#pnlst = [pdic[i] for i in pnlst]
+		pdic = corrnames(organ)
+		pnlst = [pdic[i] for i in pnlst]
 	else:
 		# None
 
-		extension = '.csv'
-		filename = ''.join(["../data/",organ,"_MS",extension])
-		data = pd.read_csv(filename,index_col=0)
-		data = data.loc[:, (data != 0).any(axis=0)]
-		data = data.transpose()
+		pnlst1, cnlst1, Xdata1, Ydata1 = importdata(organ,isTargeted=False,LogConc=False)
 
-		pnlst1 = [i.strip().split(' / ')[-1] for i in data.index.values.tolist()[1:]]
-		Ydata1 = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst1)]
-		Xdata1 = data.as_matrix()[1:]
-		filename3 = ''.join(["../data/",organ,"_names.csv"])
-		data3 = pd.read_csv(filename3,index_col=0)
-		KEGGns = data3.iloc[:,5]
-		cnlst = [i.strip().split('; ')[0] for i in data3.iloc[:,4]]
+		pnlst2, cnlst2, Xdata2, Ydata2 = importdata(organ,isTargeted=True,LogConc=False)
 
-
-		extension2 = '_targeted.csv'
-		filename2 = ''.join(["../data/",organ,"_MS",extension2])
-		data2 = pd.read_csv(filename2,index_col=0)
-		data2 = data2.loc[:, (data2 != 0).any(axis=0)]
-
-		pnlst2 = data2.iloc[:,0].tolist()
-		Ydata2 = [1 if 'ctrl' in n else 0 for i,n in enumerate(pnlst2)]
-		Xdata2 = data2.as_matrix()[:,2:]
-		KEGGns2 = data2.iloc[:,4]
-		cnlst2 = data2.columns.values.tolist()[2:]
-		pdic = corrnames(organ)
-		pnlst2 = [pdic[i] for i in pnlst2]
-
-		cnlst.extend(cnlst2)
+		cnlst1.extend(cnlst2)
 		X = []
 		Ydata = []
 		pnlst = []
@@ -89,6 +65,15 @@ def importdata(organ,isTargeted=False):
 		Xdata = np.array(X)
 
 	print('Import of "+filename+":\tcomplete')
+
+	if LogConc:
+		Xdata = np.log(Xdata)
+
+	elif LogConc == None: #add the logs of the concentratiosn to the Xdata matrix
+		pnlst3, cnlst3, Xdata3, Ydata3 = importdata(organ,isTargeted=False,LogConc=True)
+		Xdata = np.append(Xdata,Xdata3,1)
+		cnlst.extend(['log_'+s for s in cnlst3])
+
 	return pnlst, cnlst, Xdata, Ydata
 
 def corrnames(organ):
@@ -205,7 +190,7 @@ if __name__ == "__main__":
 	print(len(X))
 
 	print('\n\nData Import for targeted metabolomics\n-----------------------------------------------------------------------\n')
-	pn, cn, X, Y = importdata('liver',isTargeted=None)
+	pn, cn, X, Y = importdata('liver',isTargeted=None,LogConc=True)
 	print('X:')
 	print(X)
 	print('-----------------------------------------------------------------------\nY:')
@@ -220,7 +205,7 @@ if __name__ == "__main__":
 	print(len(X[0]))
 	print(len(Y))
 	print(len(pn))
-	print(len(X))
+	print(len(X[:,0]))
 
 	corrnames(organ)
 
