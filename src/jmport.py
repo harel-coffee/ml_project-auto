@@ -7,7 +7,7 @@ from functools import reduce
 import pandas as pd
 
 # import data
-def importdata(organ,isTargeted=False,LogConc=None):
+def importdata(family=1,organ='liver',isTargeted=False,LogConc=None):
 	"""
 	import the training set from filename
 	returns
@@ -19,7 +19,7 @@ def importdata(organ,isTargeted=False,LogConc=None):
 	#remove rows that are zero
 	if isTargeted == False:
 		extension = '.csv'
-		filename = ''.join(["../data/",organ,"_MS",extension])
+		filename = ''.join(["../data/fam",str(family),'_',organ,"_MS",extension])
 		data = pd.read_csv(filename,index_col=0)
 		data = data.loc[:, (data != 0).any(axis=0)]
 		data = data.transpose()
@@ -29,10 +29,10 @@ def importdata(organ,isTargeted=False,LogConc=None):
 		filename3 = ''.join(["../data/",organ,"_names.csv"])
 		data3 = pd.read_csv(filename3,index_col=0)
 		KEGGns = data3.iloc[:,5]
-		cnlst = [i.strip().split('; ')[0] for i in data3.iloc[:,4]]
+		cnlst = [i.strip().split('; ')[0] for i in data3.iloc[:,3]] #note that this must be changed to 3 for plasma nontargeted and to 4 for the rest.
 	elif isTargeted == True:
 		extension = '_targeted.csv'
-		filename = ''.join(["../data/",organ,"_MS",extension])
+		filename = ''.join(["../data/fam",str(family),'_',organ,"_MS",extension])
 		data = pd.read_csv(filename,index_col=0)
 		data = data.loc[:, (data != 0).any(axis=0)]
 		pnlst = data.iloc[:,0].tolist()
@@ -45,11 +45,11 @@ def importdata(organ,isTargeted=False,LogConc=None):
 	else:
 		# None
 
-		pnlst1, cnlst1, Xdata1, Ydata1 = importdata(organ,isTargeted=False,LogConc=False)
+		pnlst1, cnlst, Xdata1, Ydata1 = importdata(family,organ,isTargeted=False,LogConc=False)
 
-		pnlst2, cnlst2, Xdata2, Ydata2 = importdata(organ,isTargeted=True,LogConc=False)
+		pnlst2, cnlst2, Xdata2, Ydata2 = importdata(family,organ,isTargeted=True,LogConc=False)
 
-		cnlst1.extend(cnlst2)
+		cnlst.extend(cnlst2)
 		X = []
 		Ydata = []
 		pnlst = []
@@ -63,14 +63,14 @@ def importdata(organ,isTargeted=False,LogConc=None):
 						print('FATAL ERROR: wrong identification of\t'+p+'\tand\t'+q)
 					break
 		Xdata = np.array(X)
+		filename = 'again'
 
-	print('Import of "+filename+":\tcomplete')
+	print('Import of '+filename+':\tcomplete')
 
 	if LogConc:
 		Xdata = np.log(Xdata)
-
 	elif LogConc == None: #add the logs of the concentratiosn to the Xdata matrix
-		pnlst3, cnlst3, Xdata3, Ydata3 = importdata(organ,isTargeted=False,LogConc=True)
+		pnlst3, cnlst3, Xdata3, Ydata3 = importdata(organ,isTargeted,LogConc=True)
 		Xdata = np.append(Xdata,Xdata3,1)
 		cnlst.extend(['log_'+s for s in cnlst3])
 
@@ -80,7 +80,7 @@ def corrnames(organ):
 	"""
 	returns a dictionary correlating the name of the mices in the TM (targeted metabolomics) experiment and the corresponding ID #
 	"""
-	filename = ''.join(["../data/",organ,"_crossnames.csv"])
+	filename = ''.join(["../data/fam",str(family),"_",organ,"_crossnames.csv"])
 	data = pd.read_csv(filename)
 	keys = data.iloc[:,2].tolist()
 	values = data.iloc[:,1].tolist()
@@ -135,7 +135,7 @@ def import_cnames(organ,isTargeted=False):
 
 def casesn(n):
 	"""
-	returns a number associated to each of the weeks in the range (1; 4)
+	returns a number associated to each of the weeks in the range (0; 3)
 	"""
 	# TODO change to integer switch
 	if 'week_4' in n or 'week4' in n or '4w' in n:
@@ -168,10 +168,11 @@ def importcombdata(organ,untargeted=True,targeted=False):
 
 
 if __name__ == "__main__":
+	family=1
 	organ = 'liver'
 	print('Testing...\n\n')
 	print('Data Import for normal metabolomics\n-----------------------------------------------------------------------\n')
-	pn, cn, X, Y = importdata(organ)
+	pn, cn, X, Y = importdata(family,organ)
 
 	print('X:')
 	print(X)
@@ -190,7 +191,7 @@ if __name__ == "__main__":
 	print(len(X))
 
 	print('\n\nData Import for targeted metabolomics\n-----------------------------------------------------------------------\n')
-	pn, cn, X, Y = importdata('liver',isTargeted=None,LogConc=True)
+	pn, cn, X, Y = importdata('liver',isTargeted=None,LogConc=None)
 	print('X:')
 	print(X)
 	print('-----------------------------------------------------------------------\nY:')
